@@ -1,8 +1,12 @@
 from tkinter import *
 
-root = Tk()
+ROOT = Tk()
 
-w = Label(root, text="Hello, world!")
-w.pack()
+l1 = Label(ROOT, text="Assembly Code")
+l1.pack()
 
-root.mainloop()
+CodeArea = Text()
+CodeArea.grid(row = 1,column =1)
+
+
+ROOT.mainloop()
