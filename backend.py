@@ -17,8 +17,8 @@ def convert(axis,mode,opcode,address):
     return(switcher[axis]+switcher[mode]+switcher[opcode]+x) 
 
 def change_content(r,content):
-    r['text'] = content.get(1.0, END+"-1c")
-    print(content)
+    r['text'] = content
+
 
 class Memory():
 
@@ -51,6 +51,7 @@ class Memory():
 
 class Register():
     def __init__(self,size,t):
+        self.t = t
         self.output=None
         self.bits = size
         self.value=None
@@ -59,6 +60,9 @@ class Register():
             self.value = int(0)
         if(t == "FULL"):
             self.value = "0000000000000000"
+    
+    def update(self):
+        self.output['text'] = self.outputVal
 
 acx = Register(16,"NUM")
 acy = Register(16,"NUM")
@@ -83,13 +87,27 @@ class Architecture():
         self.memory = memory  
     
     def ModifyOutput(self,val,outputsource):
-        temp = val.split(' ')
-        outputsource.outputVal = convert(temp[0],temp[1],temp[2],temp[3])
+        if outputsource.t == "FULL":
+            a = val[0]
+            b = val[1]
+            c = val[2:5]
+            d = val[5:]
+            print(a+b+c+d)
+            outputsource.outputVal = convert(a,b,c,d)
+        if outputsource.t == "NUM":
+            x = '{0:b}'.format(int(val))
+            for i in range(0,outputsource.bits-len(x)):
+                x = "0"+x
+            outputsource.outputVal = x 
+        outputsource.update()
+
     
     #Operations
     def DECODE(self,val):
         if(val.find('LDA') != -1):
             return "LOAD_INSTRUCTION"
+        if(val.find('HLT') != -1):
+            return "HALT"
 
     def RUN_PROGRAM(self):
         for instrucion in self.memory.REALMEMORY:
@@ -99,7 +117,9 @@ class Architecture():
             routine = self.DECODE(self.ir.value)
             print(self.ir.value)
             if(routine == "LOAD_INSTRUCTION"):
-                self.LOAD()
+                self.LOAD(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
+            if(routine == "HALT"):
+                return
 
 
     def LOAD(self,axis,mode,address):
@@ -108,14 +128,15 @@ class Architecture():
     #Microoperations
     def INCREMENT_PC(self):
         self.pc.value = self.pc.value + 1
-        self.pc.outputVal = '{0:b}'.format(int(self.pc.value))
+        #self.pc.outputVal = '{0:b}'.format(int(self.pc.value))
+        self.ModifyOutput(self.pc.value,self.pc)
 
     def PC_TO_AR(self):
         self.ar.value = self.pc.value
-        #self.ModifyOutput(self.ar.value,self.ar)
+        self.ModifyOutput(self.ar.value,self.ar)
 
     def Mar_TO_IR(self,mar):
         self.ir.value = self.memory.REALMEMORY[mar]
-        #self.ModifyOutput(self.ir.value,self.ir)
+        self.ModifyOutput(self.ir.value,self.ir)
 
 architecture = Architecture(acx,acy,pc,ar,ir,dr,inpr,outr,memory)

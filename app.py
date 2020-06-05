@@ -51,18 +51,31 @@ l9.grid(row = 7,column = 1)
 OUTR = Label(ROOT)
 OUTR.grid(row = 7,column =2)
 
+l11 = Label(ROOT,text = "Address Register(AR): ")
+l11.grid(row = 8,column =1)
+AR = Label(ROOT)
+AR.grid(row = 8,column =2)
+
 l10 = Label(ROOT,text="Memory")
 l10.grid(row = 0,column = 3,columnspan = 3)
 RAM = Text(ROOT,width = 30, height =20)
 RAM.grid(row = 1,column =3,rowspan = 8,columnspan =3)
-backend.architecture.memory.output = RAM
 
+backend.architecture.memory.output = RAM
+backend.architecture.x.output = XR
+backend.architecture.y.output = YR
+backend.architecture.dr.output = DR
+backend.architecture.inpr.output = INPR
+backend.architecture.outr.output = OUTR
+backend.architecture.ir.output = IR
+backend.architecture.ar.output = AR
+backend.architecture.pc.output = PC
+#Connecting frontend with Backend
 b1 = Button(ROOT,text = "Run Program",command = partial(backend.architecture.RUN_PROGRAM))
 b1.grid(row = 9,column =0)
-
-
 b2 = Button(ROOT,text = "Load Program",command = partial(backend.architecture.memory.LOAD,CodeArea))
 b2.grid(row = 9,column =3,columnspan=3)
+
 
 
 ROOT.mainloop()
