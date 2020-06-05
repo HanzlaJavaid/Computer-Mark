@@ -59,6 +59,17 @@ class Register():
             self.value = int(0)
         if(t == "FULL"):
             self.value = "0000000000000000"
+
+acx = Register(16,"NUM")
+acy = Register(16,"NUM")
+pc = Register(10,"NUM")
+ar = Register(10,"NUM")
+ir = Register(10,"FULL")
+dr = Register(16,"NUM")
+inpr = Register(10,"NUM")
+outr = Register(10,"NUM")
+memory = Memory()
+
 class Architecture():
     def __init__(self,acx,acy,pc,ar,ir,dr,inpr,outr,memory):
         self.x = acx
@@ -76,26 +87,35 @@ class Architecture():
         outputsource.outputVal = convert(temp[0],temp[1],temp[2],temp[3])
     
     #Operations
+    def DECODE(self,val):
+        if(val.find('LDA') != -1):
+            return "LOAD_INSTRUCTION"
+
     def RUN_PROGRAM(self):
         for instrucion in self.memory.REALMEMORY:
             self.PC_TO_AR()
             self.INCREMENT_PC()
-            self.Mar_TO_IR(self.ar.val)
+            self.Mar_TO_IR(self.ar.value)
+            routine = self.DECODE(self.ir.value)
+            print(self.ir.value)
+            if(routine == "LOAD_INSTRUCTION"):
+                self.LOAD()
+
 
     def LOAD(self,axis,mode,address):
         print("This is LDA")
 
     #Microoperations
     def INCREMENT_PC(self):
-        self.pc.value = self.pc.val + 1
+        self.pc.value = self.pc.value + 1
         self.pc.outputVal = '{0:b}'.format(int(self.pc.value))
 
     def PC_TO_AR(self):
         self.ar.value = self.pc.value
-        self.ModifyOutput(self.ar.value,self.ar)
+        #self.ModifyOutput(self.ar.value,self.ar)
 
     def Mar_TO_IR(self,mar):
         self.ir.value = self.memory.REALMEMORY[mar]
-        self.ModifyOutput(self.ir.value,self.ir)
+        #self.ModifyOutput(self.ir.value,self.ir)
 
-
+architecture = Architecture(acx,acy,pc,ar,ir,dr,inpr,outr,memory)

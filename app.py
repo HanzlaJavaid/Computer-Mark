@@ -3,8 +3,6 @@ from functools import partial
 import backend
 WIDTH_FOR_REGISTEROUTPUT = 10
 
-memory = backend.Memory()
-
 ROOT = Tk()
 
 l1 = Label(ROOT, text="Assembly Code")
@@ -57,14 +55,13 @@ l10 = Label(ROOT,text="Memory")
 l10.grid(row = 0,column = 3,columnspan = 3)
 RAM = Text(ROOT,width = 30, height =20)
 RAM.grid(row = 1,column =3,rowspan = 8,columnspan =3)
-memory.output = RAM
-memory.Print()
+backend.architecture.memory.output = RAM
 
-b1 = Button(ROOT,text = "Run Program",command = partial(backend.change_content,IR,CodeArea))
+b1 = Button(ROOT,text = "Run Program",command = partial(backend.architecture.RUN_PROGRAM))
 b1.grid(row = 9,column =0)
 
 
-b2 = Button(ROOT,text = "Load Program",command = partial(memory.LOAD,CodeArea))
+b2 = Button(ROOT,text = "Load Program",command = partial(backend.architecture.memory.LOAD,CodeArea))
 b2.grid(row = 9,column =3,columnspan=3)
 
 
