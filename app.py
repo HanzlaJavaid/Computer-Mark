@@ -57,13 +57,14 @@ l10 = Label(ROOT,text="Memory")
 l10.grid(row = 0,column = 3,columnspan = 3)
 RAM = Text(ROOT,width = 30, height =20)
 RAM.grid(row = 1,column =3,rowspan = 8,columnspan =3)
-RAM.insert(END, memory.MEMORY)
+memory.output = RAM
+memory.Print()
 
 b1 = Button(ROOT,text = "Run Program",command = partial(backend.change_content,IR,CodeArea))
 b1.grid(row = 9,column =0)
 
 
-b2 = Button(ROOT,text = "Load Program",command = partial(backend.change_content,IR,CodeArea))
+b2 = Button(ROOT,text = "Load Program",command = partial(memory.LOAD,CodeArea))
 b2.grid(row = 9,column =3,columnspan=3)
 
 
