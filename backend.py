@@ -138,6 +138,8 @@ class Architecture():
         self.ar.value = int(value)
         if(val.find('LDA') != -1):
             return "LOAD_INSTRUCTION"
+        if(val.find('ADD') != -1):
+            return "ADD_INSTRUCTION"
         if(val.find('HLT') != -1):
             return "HALT"
 
@@ -155,6 +157,8 @@ class Architecture():
         routine = self.DECODE(self.ir.value)
         if(routine == "LOAD_INSTRUCTION"):
             self.LOAD(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
+        if(routine == "ADD_INSTRUCTION"):
+            self.ADD(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
         if(routine == "HALT"):
             return 0
         return 1
@@ -163,6 +167,12 @@ class Architecture():
         self.Mar_TO_DR()
         if(axis == 'X'):
             self.DR_TO_XR()
+    
+    def ADD(self,axis,mode,address):
+        self.Mar_TO_DR()
+        if(axis == "X"):
+            self.x.value = int(self.x.value) + int(self.dr.value)
+            self.ModifyOutput(self.x.value,self.x)
 
 
     #Microoperations
@@ -184,6 +194,11 @@ class Architecture():
     
     def DR_TO_XR(self):
         self.x.value = self.dr.value
-        self.ModifyOutput(self.x.value,self.x) 
+        self.ModifyOutput(self.x.value,self.x)
+
+    def DR_TO_YR(self):
+        self.y.value = self.dr.value
+        self.ModifyOutput(self.y.value,self.y)
+
 
 architecture = Architecture(acx,acy,pc,ar,ir,dr,inpr,outr,memory)
