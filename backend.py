@@ -1,5 +1,5 @@
 from tkinter import *
-
+import os
 def convert(axis,mode,opcode,address):
     switcher = {
         "X":"0",
@@ -26,6 +26,7 @@ class Memory():
         self.memorysize = 1024
         self.MEMORY = []
         self.REALMEMORY = []
+        self.indexer = {}
         self.output= None
         for i in range(0,self.memorysize):
             WORD = "0000000000000000"
@@ -40,13 +41,27 @@ class Memory():
         #Preprocessing Raw string
         raw = r.get(1.0,END)
         temp = raw.split('\n')
-        for i in range(0,len(temp)-1):
-            x = temp[i].split(' ')
+        startIndex = len(self.indexer)
+        InsIndex = 0
+        for i in range(startIndex,startIndex+len(temp)-1):
+            x = temp[InsIndex].split(' ')
             code = convert(x[0],x[1],x[2],x[3])
             real = x[0]+x[1]+x[2]+x[3]
             self.REALMEMORY[i] = real
             self.MEMORY[i] = code
-        
+            InsIndex += 1
+        self.Print()
+    def ALLOCATE(self,r):
+        raw = r.get(1.0,END)
+        temp = raw.split('\n')
+        for i in range(0,len(temp)-1):
+            x = temp[i].split(':')
+            self.indexer.update({x[0]:i})
+            self.REALMEMORY[i] = int(x[1])
+            j = '{0:b}'.format(int(x[1]))
+            for k in range(0,16-len(j)):
+                j = "0"+j
+            self.MEMORY[i] = j
         self.Print()
 
 class Register():
@@ -84,7 +99,8 @@ class Architecture():
         self.dr = dr
         self.inpr = inpr
         self.outr = outr
-        self.memory = memory  
+        self.memory = memory
+        self.pc.value = 0;  
     
     def ModifyOutput(self,val,outputsource):
         if outputsource.t == "FULL":
@@ -92,7 +108,6 @@ class Architecture():
             b = val[1]
             c = val[2:5]
             d = val[5:]
-            print(a+b+c+d)
             outputsource.outputVal = convert(a,b,c,d)
         if outputsource.t == "NUM":
             x = '{0:b}'.format(int(val))
@@ -104,26 +119,34 @@ class Architecture():
     
     #Operations
     def DECODE(self,val):
+        self.ar.value = int(val[5:])
         if(val.find('LDA') != -1):
             return "LOAD_INSTRUCTION"
         if(val.find('HLT') != -1):
             return "HALT"
 
     def RUN_PROGRAM(self):
-        for instrucion in self.memory.REALMEMORY:
-            self.PC_TO_AR()
-            self.INCREMENT_PC()
-            self.Mar_TO_IR(self.ar.value)
-            routine = self.DECODE(self.ir.value)
-            print(self.ir.value)
-            if(routine == "LOAD_INSTRUCTION"):
-                self.LOAD(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
-            if(routine == "HALT"):
-                return
-
+        s = 1
+        while(s == 1):
+            s = self.FetchDecodeExecute()
+        
+    
+    def FetchDecodeExecute(self):
+        self.PC_TO_AR()
+        self.INCREMENT_PC()
+        self.Mar_TO_IR()
+        routine = self.DECODE(self.ir.value)
+        if(routine == "LOAD_INSTRUCTION"):
+            self.LOAD(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
+        if(routine == "HALT"):
+            return 0
+        return 1
 
     def LOAD(self,axis,mode,address):
-        print("This is LDA")
+        self.Mar_TO_DR()
+        if(axis == 'X'):
+            self.DR_TO_XR()
+
 
     #Microoperations
     def INCREMENT_PC(self):
@@ -135,8 +158,16 @@ class Architecture():
         self.ar.value = self.pc.value
         self.ModifyOutput(self.ar.value,self.ar)
 
-    def Mar_TO_IR(self,mar):
-        self.ir.value = self.memory.REALMEMORY[mar]
+    def Mar_TO_IR(self):
+        self.ir.value = self.memory.REALMEMORY[self.ar.value]
         self.ModifyOutput(self.ir.value,self.ir)
+
+    def Mar_TO_DR(self):
+        self.dr.value = self.memory.REALMEMORY[self.ar.value]
+        self.ModifyOutput(self.dr.value,self.dr)
+    
+    def DR_TO_XR(self):
+        self.x.value = self.dr.value
+        self.ModifyOutput(self.x.value,self.x) 
 
 architecture = Architecture(acx,acy,pc,ar,ir,dr,inpr,outr,memory)

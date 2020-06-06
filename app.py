@@ -57,9 +57,14 @@ AR = Label(ROOT)
 AR.grid(row = 8,column =2)
 
 l10 = Label(ROOT,text="Memory")
-l10.grid(row = 0,column = 3,columnspan = 3)
+l10.grid(row = 0,column = 3)
 RAM = Text(ROOT,width = 30, height =20)
-RAM.grid(row = 1,column =3,rowspan = 8,columnspan =3)
+RAM.grid(row = 1,column =3,rowspan = 8)
+
+l12 = Label(ROOT,text = "Allocate Memory")
+l12.grid(row = 0, column = 4)
+MEMORY_CODE = Text(ROOT,width = 30,height = 20)
+MEMORY_CODE.grid(row = 1,column =4,rowspan = 8)
 
 backend.architecture.memory.output = RAM
 backend.architecture.x.output = XR
@@ -71,10 +76,14 @@ backend.architecture.ir.output = IR
 backend.architecture.ar.output = AR
 backend.architecture.pc.output = PC
 #Connecting frontend with Backend
-b1 = Button(ROOT,text = "Run Program",command = partial(backend.architecture.RUN_PROGRAM))
+b1 = Button(ROOT,text = "Step",command = partial(backend.architecture.FetchDecodeExecute))
 b1.grid(row = 9,column =0)
+b3 = Button(ROOT,text = "RUN",command = partial(backend.architecture.RUN_PROGRAM))
+b3.grid(row = 10,column =0)
+b4 = Button(ROOT,text = "ALLOCATE",command = partial(backend.architecture.memory.ALLOCATE,MEMORY_CODE))
+b4.grid(row = 9,column =4)
 b2 = Button(ROOT,text = "Load Program",command = partial(backend.architecture.memory.LOAD,CodeArea))
-b2.grid(row = 9,column =3,columnspan=3)
+b2.grid(row = 9,column =3)
 
 
 
