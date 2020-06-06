@@ -1,6 +1,6 @@
 from tkinter import *
 import os
-def convert(axis,mode,opcode,address):
+def convert(axis,mode,opcode,address,indexer):
     switcher = {
         "X":"0",
         "Y":"1",
@@ -10,7 +10,8 @@ def convert(axis,mode,opcode,address):
         "ADD":"0001",
         "HLT":"1111",
     }
-    x = '{0:b}'.format(int(address))
+    a = indexer[address]
+    x = '{0:b}'.format(int(a))
     for i in range(0,10-len(x)):
         x = "0"+x
 
@@ -42,14 +43,14 @@ class Memory():
         raw = r.get(1.0,END)
         temp = raw.split('\n')
         startIndex = len(self.indexer)
-        InsIndex = 0
+        insI = 0
         for i in range(startIndex,startIndex+len(temp)-1):
-            x = temp[InsIndex].split(' ')
-            code = convert(x[0],x[1],x[2],x[3])
+            x = temp[insI].split(' ')
+            code = convert(x[0],x[1],x[2],x[3],self.indexer)
             real = x[0]+x[1]+x[2]+x[3]
             self.REALMEMORY[i] = real
             self.MEMORY[i] = code
-            InsIndex += 1
+            insI = insI+1
         self.Print()
     def ALLOCATE(self,r):
         raw = r.get(1.0,END)
@@ -102,13 +103,27 @@ class Architecture():
         self.memory = memory
         self.pc.value = 0;  
     
+    def prepare(self):
+        self.pc.value = len(self.memory.indexer)
+        x = '{0:b}'.format(int(self.pc.value))
+        for i in range(0,10-len(x)):
+            x = "0"+x
+        self.pc.outputVal = x
+        self.pc.update()
+    
     def ModifyOutput(self,val,outputsource):
         if outputsource.t == "FULL":
-            a = val[0]
-            b = val[1]
-            c = val[2:5]
-            d = val[5:]
-            outputsource.outputVal = convert(a,b,c,d)
+            if isinstance(val,str):
+                a = val[0]
+                b = val[1]
+                c = val[2:5]
+                d = val[5:]
+                outputsource.outputVal = convert(a,b,c,d,self.memory.indexer)
+            if isinstance(val,int):
+                val = '{0:b}'.format(int(val))
+                for i in range(0,16-len(val)):
+                    val = "0"+val
+                outputsource.outputVal = val
         if outputsource.t == "NUM":
             x = '{0:b}'.format(int(val))
             for i in range(0,outputsource.bits-len(x)):
@@ -118,8 +133,9 @@ class Architecture():
 
     
     #Operations
-    def DECODE(self,val):
-        self.ar.value = int(val[5:])
+    def DECODE(self,val): 
+        value = self.memory.indexer[val[5:]]
+        self.ar.value = int(value)
         if(val.find('LDA') != -1):
             return "LOAD_INSTRUCTION"
         if(val.find('HLT') != -1):
@@ -135,6 +151,7 @@ class Architecture():
         self.PC_TO_AR()
         self.INCREMENT_PC()
         self.Mar_TO_IR()
+        print(self.ir.value)
         routine = self.DECODE(self.ir.value)
         if(routine == "LOAD_INSTRUCTION"):
             self.LOAD(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
@@ -151,7 +168,6 @@ class Architecture():
     #Microoperations
     def INCREMENT_PC(self):
         self.pc.value = self.pc.value + 1
-        #self.pc.outputVal = '{0:b}'.format(int(self.pc.value))
         self.ModifyOutput(self.pc.value,self.pc)
 
     def PC_TO_AR(self):

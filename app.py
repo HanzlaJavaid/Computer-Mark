@@ -75,6 +75,11 @@ backend.architecture.outr.output = OUTR
 backend.architecture.ir.output = IR
 backend.architecture.ar.output = AR
 backend.architecture.pc.output = PC
+
+def LOAD(CodeArea):
+    backend.architecture.memory.LOAD(CodeArea)
+    backend.architecture.prepare()
+
 #Connecting frontend with Backend
 b1 = Button(ROOT,text = "Step",command = partial(backend.architecture.FetchDecodeExecute))
 b1.grid(row = 9,column =0)
@@ -82,7 +87,7 @@ b3 = Button(ROOT,text = "RUN",command = partial(backend.architecture.RUN_PROGRAM
 b3.grid(row = 10,column =0)
 b4 = Button(ROOT,text = "ALLOCATE",command = partial(backend.architecture.memory.ALLOCATE,MEMORY_CODE))
 b4.grid(row = 9,column =4)
-b2 = Button(ROOT,text = "Load Program",command = partial(backend.architecture.memory.LOAD,CodeArea))
+b2 = Button(ROOT,text = "Load Program",command = partial(LOAD,CodeArea))
 b2.grid(row = 9,column =3)
 
 
