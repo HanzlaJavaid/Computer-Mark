@@ -8,6 +8,7 @@ def convert(axis,mode,opcode,address,indexer):
         "I":"1",
         "LDA":"0000",
         "ADD":"0001",
+        "STO":"0010",
         "HLT":"1111",
     }
     a = indexer[address]
@@ -140,6 +141,8 @@ class Architecture():
             return "LOAD_INSTRUCTION"
         if(val.find('ADD') != -1):
             return "ADD_INSTRUCTION"
+        if(val.find('STO') != -1):
+            return "STORE_INSTRUCTION"
         if(val.find('HLT') != -1):
             return "HALT"
 
@@ -159,6 +162,9 @@ class Architecture():
             self.LOAD(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
         if(routine == "ADD_INSTRUCTION"):
             self.ADD(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
+        if(routine == "STORE_INSTRUCTION"):
+            self.STO(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
+            
         if(routine == "HALT"):
             return 0
         return 1
@@ -167,13 +173,20 @@ class Architecture():
         self.Mar_TO_DR()
         if(axis == 'X'):
             self.DR_TO_XR()
+        if(axis == 'Y'):
+            self.DR_TO_YR()
     
     def ADD(self,axis,mode,address):
         self.Mar_TO_DR()
         if(axis == "X"):
             self.x.value = int(self.x.value) + int(self.dr.value)
-            self.ModifyOutput(self.x.value,self.x)
+        if(axis == "Y"):
+            self.y.value = int(self.y.value) + int(self.dr.value)
+        self.ModifyOutput(self.x.value,self.x)
 
+    def STO(self,axis,mode,address):
+         if(axis == "X"):
+             self.XR_TO_Mar()
 
     #Microoperations
     def INCREMENT_PC(self):
@@ -199,6 +212,22 @@ class Architecture():
     def DR_TO_YR(self):
         self.y.value = self.dr.value
         self.ModifyOutput(self.y.value,self.y)
+    
+    def XR_TO_Mar(self):
+        self.memory.REALMEMORY[self.ar.value] = self.x.value
+        x = '{0:b}'.format(int(self.x.value))
+        for i in range(0,16-len(x)):
+            x = "0"+x
+        self.memory.MEMORY[self.ar.value] = x
+        self.memory.Print()
+    def YR_TO_Mar(self):
+        self.memory.REALMEMORY[self.ar.value] = self.y.value
+        x = '{0:b}'.format(int(self.y.value))
+        for i in range(0,16-len(x)):
+            x = "0"+x
+        self.memory.MEMORY[self.ar.value] = x
+        self.memory.Print()
+        
 
 
 architecture = Architecture(acx,acy,pc,ar,ir,dr,inpr,outr,memory)
