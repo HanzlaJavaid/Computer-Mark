@@ -1,19 +1,28 @@
 from tkinter import *
 import os
+identityCounter =0 
 def convert(axis,mode,opcode,address,indexer):
     switcher = {
         "X":"0",
         "Y":"1",
         "D":"0",
         "I":"1",
-        "LDA":"0000",
-        "ADD":"0001",
-        "STO":"0010",
-        "HLT":"1111",
+        "LDA":"000",
+        "ADD":"001",
+        "AND":"010",
+        "SUB":"011",
+        "STO":"100",
+        "COM":"101",
+        "CMP":"110",
     }
+    global identityCounter
+    if address not in indexer.keys():
+        indexer.update({address:int(address)})
+        identityCounter+=1
+    
     a = indexer[address]
     x = '{0:b}'.format(int(a))
-    for i in range(0,10-len(x)):
+    for i in range(0,11-len(x)):
         x = "0"+x
 
     return(switcher[axis]+switcher[mode]+switcher[opcode]+x) 
@@ -87,25 +96,27 @@ pc = Register(10,"NUM")
 ar = Register(10,"NUM")
 ir = Register(10,"FULL")
 dr = Register(16,"NUM")
+tr = Register(16,"NUM")
 inpr = Register(10,"NUM")
 outr = Register(10,"NUM")
 memory = Memory()
 
 class Architecture():
-    def __init__(self,acx,acy,pc,ar,ir,dr,inpr,outr,memory):
+    def __init__(self,acx,acy,pc,ar,ir,dr,tr,inpr,outr,memory):
         self.x = acx
         self.y = acy
         self.pc = pc
         self.ir = ir
         self.ar = ar
         self.dr = dr
+        self.tr = tr
         self.inpr = inpr
         self.outr = outr
         self.memory = memory
         self.pc.value = 0;  
     
     def prepare(self):
-        self.pc.value = len(self.memory.indexer)
+        self.pc.value = len(self.memory.indexer)-identityCounter
         x = '{0:b}'.format(int(self.pc.value))
         for i in range(0,10-len(x)):
             x = "0"+x
@@ -132,17 +143,38 @@ class Architecture():
             outputsource.outputVal = x 
         outputsource.update()
 
+    def ModifyMemory(self,r):
+        x = '{0:b}'.format(int(r.value))
+        for i in range(0,16-len(x)):
+            x = "0"+x
+        self.memory.MEMORY[self.ar.value] = x
+        self.memory.Print()
+
     
     #Operations
     def DECODE(self,val): 
         value = self.memory.indexer[val[5:]]
-        self.ar.value = int(value)
+        self.ar.value = int(value)        
         if(val.find('LDA') != -1):
             return "LOAD_INSTRUCTION"
         if(val.find('ADD') != -1):
             return "ADD_INSTRUCTION"
+        if(val.find('SUB') != -1):
+            return "SUB_INSTRUCTION"
+        if(val.find('AND') != -1):
+            return "AND_INSTRUCTION"
+        if(val.find('CMP') != -1):
+            return "CMP_INSTRUCTION"
         if(val.find('STO') != -1):
             return "STORE_INSTRUCTION"
+        if(val.find('JMP') != -1):
+            return "JUMP_INSTRUCTION"
+        if(val.find('BSA') != -1):
+            return "BSA_INSTRUCTION"
+        if(val.find('ISZ') != -1):
+            return "ISZ_INSTRUCTION"
+        if(val.find('COM') != -1):
+            return "COM_INSTRUCTION"       
         if(val.find('HLT') != -1):
             return "HALT"
 
@@ -162,9 +194,22 @@ class Architecture():
             self.LOAD(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
         if(routine == "ADD_INSTRUCTION"):
             self.ADD(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
+        if(routine == "SUB_INSTRUCTION"):
+            self.SUB(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
+        if(routine == "CMP_INSTRUCTION"):
+            self.CMP(self.ir.value[0],self.ir.value[1],self.ir.value[5:]) 
+        if(routine == "AND_INSTRUCTION"):
+            self.AND(self.ir.value[0],self.ir.value[1],self.ir.value[5:])        
         if(routine == "STORE_INSTRUCTION"):
             self.STO(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
-            
+        if(routine == "JUMP_INSTRUCTION"):
+            self.JMP(self.ir.value[0],self.ir.value[1],self.ir.value[5:])            
+        if(routine == "BSA_INSTRUCTION"):
+            self.BSA(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
+        if(routine == "ISZ_INSTRUCTION"):
+            self.ISZ(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
+        if(routine == "COM_INSTRUCTION"):
+            self.COMPLEMENT(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
         if(routine == "HALT"):
             return 0
         return 1
@@ -180,21 +225,127 @@ class Architecture():
         self.Mar_TO_DR()
         if(axis == "X"):
             self.x.value = int(self.x.value) + int(self.dr.value)
+            self.ModifyOutput(self.x.value,self.x)
         if(axis == "Y"):
             self.y.value = int(self.y.value) + int(self.dr.value)
-        self.ModifyOutput(self.x.value,self.x)
+            self.ModifyOutput(self.y.value,self.y)
+        
+
+    def AND(self,axis,mode,address):
+        self.Mar_TO_DR()
+        if(axis == "X"):
+            self.x.value = self.x.value & self.dr.value
+            self.ModifyOutput(self.x.value,self.x)
+        if(axis == "Y"):
+            self.y.value = self.y.value & self.dr.value
+            self.ModifyOutput(self.y.value,self.y)
+        
+
+    def SUB(self,axis,mode,address):
+        self.Mar_TO_DR()
+        if(axis == "X"):
+            self.x.value = int(self.x.value) - int(self.dr.value)
+            self.ModifyOutput(self.x.value,self.x)
+        if(axis == "Y"):
+            self.y.value = int(self.y.value) - int(self.dr.value)
+            self.ModifyOutput(self.y.value,self.y)
+
 
     def STO(self,axis,mode,address):
-         if(axis == "X"):
-             self.XR_TO_Mar()
+        if(axis == "X"):
+            self.XR_TO_Mar()
+        if(axis == "Y"):
+            self.YR_TO_Mar()
+    
+    def JMP(self,axis,mode,address):
+        self.AR_TO_PC()
 
+    def CMP(self,axis,mode,address):
+        self.Mar_TO_DR()
+        if(axis == "X"):
+            if(self.x.value == self.dr.value):
+                self.SET_XR()
+            else:
+                self.RESET_XR()
+        if(axis == "Y"):
+            if(self.y.value == self.dr.value):
+                self.SET_YR()
+            else:
+                self.RESET_YR()
+
+    def BSA(self,axis,mode,address):
+        self.PC_TO_Mar()
+        self.INCREMENT_AR()
+        self.AR_TO_PC()
+    
+    def ISZ(self,axis,mode,address):
+        self.Mar_TO_DR()
+        self.INCREMENT_DR()
+        self.DR_TO_Mar()
+        if(int(self.dr.value) == 0):
+            self.INCREMENT_PC()
+
+    def COMPLEMENT(self,axis,mode,address):
+        if(axis == "X"):
+            self.COM_X()
+        if(axis =="Y"):
+            self.COM_Y()
+    
     #Microoperations
     def INCREMENT_PC(self):
         self.pc.value = self.pc.value + 1
         self.ModifyOutput(self.pc.value,self.pc)
 
+    def INCREMENT_AR(self):
+        self.ar.value = self.ar.value + 1
+        self.ModifyOutput(self.ar.value,self.ar)
+    
+    def INCREMENT_DR(self):
+        self.dr.value = self.dr.value + 1
+        self.ModifyOutput(self.dr.value,self.dr)
+    
+    def INCREMENT_XR(self):
+        self.x.value = self.x.value + 1
+        self.ModifyOutput(self.x.value,self.x)
+    
+    def INCREMENT_YR(self):
+        self.y.value = self.y.value + 1
+        self.ModifyOutput(self.y.value,self.y)
+
+    def SET_XR(self):
+        self.x.value = 1
+        self.ModifyOutput(self.x.value,self.x)
+    
+    def RESET_XR(self):
+        self.x.value = 0
+        self.ModifyOutput(self.x.value,self.x)
+    
+    def SET_YR(self):
+        self.y.value = 1
+        self.ModifyOutput(self.y.value,self.y)
+    
+    def RESET_YR(self):
+        self.y.value = 0
+        self.ModifyOutput(self.y.value,self.y)
+
+    def COM_X(self):
+        self.x.value = -self.x.value
+        self.ModifyOutput(self.x.value,self.x)
+    
+    def COM_Y(self):
+        self.y.value = -self.y.value
+        self.ModifyOutput(self.y.value,self.y)
+
     def PC_TO_AR(self):
         self.ar.value = self.pc.value
+        self.ModifyOutput(self.ar.value,self.ar)
+
+    def PC_TO_Mar(self):
+        self.memory.REALMEMORY[self.ar.value] = self.pc.value
+        self.ModifyMemory(self.pc)
+        
+    def Mar_TO_AR(self):
+        self.ar.value = self.memory.REALMEMORY[self.ar.value]
         self.ModifyOutput(self.ar.value,self.ar)
 
     def Mar_TO_IR(self):
@@ -204,6 +355,10 @@ class Architecture():
     def Mar_TO_DR(self):
         self.dr.value = self.memory.REALMEMORY[self.ar.value]
         self.ModifyOutput(self.dr.value,self.dr)
+
+    def Mar_TO_TR(self):
+        self.tr.value = self.memory.REALMEMORY[self.ar.value]
+        self.ModifyOutput(self.tr.value,self.tr)
     
     def DR_TO_XR(self):
         self.x.value = self.dr.value
@@ -215,19 +370,26 @@ class Architecture():
     
     def XR_TO_Mar(self):
         self.memory.REALMEMORY[self.ar.value] = self.x.value
-        x = '{0:b}'.format(int(self.x.value))
-        for i in range(0,16-len(x)):
-            x = "0"+x
-        self.memory.MEMORY[self.ar.value] = x
-        self.memory.Print()
+        self.ModifyMemory(self.x)
     def YR_TO_Mar(self):
         self.memory.REALMEMORY[self.ar.value] = self.y.value
-        x = '{0:b}'.format(int(self.y.value))
-        for i in range(0,16-len(x)):
-            x = "0"+x
-        self.memory.MEMORY[self.ar.value] = x
-        self.memory.Print()
+        self.ModifyMemory(self.y)
+    
+    def XR_TO_TR(self):
+        self.tr.value = self.x.value
+        self.ModifyOutput(self.tr.value,self.tr)
+
+    def YR_TO_TR(self):
+        self.tr.value = self.y.value
+        self.ModifyOutput(self.tr.value,self.tr)
+
+    def AR_TO_PC(self):
+        self.pc.value = self.ar.value
+        self.ModifyOutput(self.pc.value,self.pc)
+    def DR_TO_Mar(self):
+        self.memory.REALMEMORY[self.ar.value] = self.dr.value
+        self.ModifyMemory(self.dr)
         
 
 
-architecture = Architecture(acx,acy,pc,ar,ir,dr,inpr,outr,memory)
+architecture = Architecture(acx,acy,pc,ar,ir,dr,tr,inpr,outr,memory)
