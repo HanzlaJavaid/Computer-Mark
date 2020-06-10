@@ -7,13 +7,14 @@ def convert(axis,mode,opcode,address,indexer):
         "Y":"1",
         "D":"0",
         "I":"1",
-        "LDA":"000",
-        "ADD":"001",
-        "AND":"010",
-        "SUB":"011",
-        "STO":"100",
-        "COM":"101",
-        "CMP":"110",
+        "LDA":"0000",
+        "ADD":"0001",
+        "AND":"0010",
+        "SUB":"0011",
+        "STO":"0100",
+        "COM":"0101",
+        "CMP":"0110",
+        "JMP":"0111",
     }
     global identityCounter
     if address not in indexer.keys():
@@ -67,7 +68,7 @@ class Memory():
         temp = raw.split('\n')
         for i in range(0,len(temp)-1):
             x = temp[i].split(':')
-            self.indexer.update({x[0]:i})
+            self.indexer.update({str(x[0]):i})
             self.REALMEMORY[i] = int(x[1])
             j = '{0:b}'.format(int(x[1]))
             for k in range(0,16-len(j)):
@@ -154,7 +155,10 @@ class Architecture():
     #Operations
     def DECODE(self,val): 
         value = self.memory.indexer[val[5:]]
-        self.ar.value = int(value)        
+        self.ar.value = int(value)
+        if(val[1] == "I"):
+            self.Mar_TO_AR()        
+            print(self.ar.value)
         if(val.find('LDA') != -1):
             return "LOAD_INSTRUCTION"
         if(val.find('ADD') != -1):
@@ -258,7 +262,8 @@ class Architecture():
             self.YR_TO_Mar()
     
     def JMP(self,axis,mode,address):
-        self.AR_TO_PC()
+        if(axis == "X"):
+            self.AR_TO_PC()
 
     def CMP(self,axis,mode,address):
         self.Mar_TO_DR()
@@ -288,8 +293,10 @@ class Architecture():
     def COMPLEMENT(self,axis,mode,address):
         if(axis == "X"):
             self.COM_X()
+            self.XR_TO_Mar()
         if(axis =="Y"):
             self.COM_Y()
+            self.YR_TO_Mar()
     
     #Microoperations
     def INCREMENT_PC(self):
