@@ -1,69 +1,85 @@
 from tkinter import *
+from tkinter import colorchooser
 from functools import partial
 import backend
-WIDTH_FOR_REGISTEROUTPUT = 10
+bit_8 = "00000000"
+bit_16 = "00000000000000"
+bit_10 = "0000000000"
+x_col = 'red'
+y_col = 'green'
+pc_col = 'blue'
+ir_col = 'orange'
+ar_col = 'grey'
+
 
 ROOT = Tk()
-
-l1 = Label(ROOT, text="Assembly Code")
+ROOT.title("Project Simulation")
+ROOT.configure(background = 'black')
+f1 = Frame(ROOT)
+f1.grid(row = 0,column =0)
+f2 = Frame(ROOT)
+f2.grid(row = 1, column =0)
+l1 = Label(f1, text="Assembly Code")
 l1.grid(row = 0 ,column =0)
 
-CodeArea = Text(ROOT,width = 30, height =20)
+CodeArea = Text(f1,width = 30, height =20)
 CodeArea.grid(row = 1,column =0,rowspan = 8)
 
-l2 = Label(ROOT,text="Computer Registers")
+l2 = Label(f1,text="Computer Registers")
 l2.grid(row = 0 ,column = 1,columnspan = 2)
 
-l3 = Label(ROOT,text = "Program Counter(PC): ")
+l3 = Label(f1,text = "Program Counter(PC):   ",background = pc_col)
 l3.grid(row = 1,column = 1)
-PC = Label(ROOT)
+PC = Label(f1,text = bit_10,background = pc_col)
 PC.grid(row = 1,column = 2)
 
+l11 = Label(f1,text = "Address Register(AR):     ",background=ar_col)
+l11.grid(row = 2,column =1)
+AR = Label(f1,text = bit_10,background=ar_col)
+AR.grid(row = 2,column =2)
 
-l4 = Label(ROOT,text = "Instruction Register(IR): ")
-l4.grid(row = 2,column = 1)
-IR = Label(ROOT)
-IR.grid(row = 2,column =2)
+
+l4 = Label(f1,text = "Instruction Register(IR): ",background = ir_col)
+l4.grid(row = 3,column = 1)
+IR = Label(f1,text = bit_16,background = ir_col)
+IR.grid(row = 3,column =2)
 
 
-l5 = Label(ROOT,text = "X Register(XR): ")
-l5.grid(row = 3,column = 1)
-XR = Label(ROOT)
-XR.grid(row = 3,column =2)
+l5 = Label(f1,text = "X Register(XR):                ",background = x_col)
+l5.grid(row = 4,column = 1)
+XR = Label(f1,background = x_col,text = bit_16)
+XR.grid(row = 4,column =2)
 
-l6 = Label(ROOT,text = "Y Register(YR): ")
-l6.grid(row = 4,column = 1)
-YR = Label(ROOT)
-YR.grid(row = 4,column =2)
+l6 = Label(f1,text = "Y Register(YR):                ",background = y_col)
+l6.grid(row = 5,column = 1)
+YR = Label(f1,background = y_col,text = bit_16)
+YR.grid(row = 5,column =2)
 
-l7 = Label(ROOT,text = "Data Register(DR): ")
-l7.grid(row = 5,column = 1)
-DR = Label(ROOT)
-DR.grid(row = 5,column =2)
+l7 = Label(f1,text = "Data Register(DR):          ")
+l7.grid(row = 6,column = 1)
+DR = Label(f1,text = bit_16)
+DR.grid(row = 6,column =2)
 
-l8 = Label(ROOT,text = "INPR: ")
-l8.grid(row = 6,column = 1)
-INPR = Label(ROOT)
-INPR.grid(row = 6,column =2)
+l8 = Label(f1,text = "INPR: ")
+l8.grid(row = 7,column = 1)
+INPR = Label(f1,text = bit_10)
+INPR.grid(row = 7,column =2)
 
-l9 = Label(ROOT,text = "OUTR: ")
-l9.grid(row = 7,column = 1)
-OUTR = Label(ROOT)
-OUTR.grid(row = 7,column =2)
+l9 = Label(f1,text = "OUTR: ")
+l9.grid(row = 8,column = 1)
+OUTR = Label(f1,text =bit_10)
+OUTR.grid(row = 8,column =2)
 
-l11 = Label(ROOT,text = "Address Register(AR): ")
-l11.grid(row = 8,column =1)
-AR = Label(ROOT)
-AR.grid(row = 8,column =2)
 
-l10 = Label(ROOT,text="Memory")
+
+l10 = Label(f1,text="Memory")
 l10.grid(row = 0,column = 3)
-RAM = Text(ROOT,width = 30, height =20)
+RAM = Text(f1,width = 30, height =20)
 RAM.grid(row = 1,column =3,rowspan = 8)
 
-l12 = Label(ROOT,text = "Allocate Memory")
+l12 = Label(f1,text = "Allocate Memory")
 l12.grid(row = 0, column = 4)
-MEMORY_CODE = Text(ROOT,width = 30,height = 20)
+MEMORY_CODE = Text(f1,width = 30,height = 20)
 MEMORY_CODE.grid(row = 1,column =4,rowspan = 8)
 
 backend.architecture.memory.output = RAM
@@ -81,14 +97,14 @@ def LOAD(CodeArea):
     backend.architecture.prepare()
 
 #Connecting frontend with Backend
-b1 = Button(ROOT,text = "Step",command = partial(backend.architecture.FetchDecodeExecute))
-b1.grid(row = 9,column =0)
-b3 = Button(ROOT,text = "RUN",command = partial(backend.architecture.RUN_PROGRAM))
-b3.grid(row = 10,column =0)
-b4 = Button(ROOT,text = "ALLOCATE",command = partial(backend.architecture.memory.ALLOCATE,MEMORY_CODE))
-b4.grid(row = 9,column =4)
-b2 = Button(ROOT,text = "Load Program",command = partial(LOAD,CodeArea))
-b2.grid(row = 9,column =3)
+b1 = Button(f2,text = "STEP",command = partial(backend.architecture.FetchDecodeExecute))
+b1.grid(row = 0,column =0)
+b3 = Button(f2,text = "RUN",command = partial(backend.architecture.RUN_PROGRAM))
+b3.grid(row = 1,column =0)
+b4 = Button(f2,text = "ALLOCATE",command = partial(backend.architecture.memory.ALLOCATE,MEMORY_CODE))
+b4.grid(row = 0,column =1)
+b2 = Button(f2,text = "Load Program",command = partial(LOAD,CodeArea))
+b2.grid(row = 1,column =2)
 
 
 
