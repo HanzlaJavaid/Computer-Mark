@@ -7,25 +7,28 @@ bit_16 = "00000000000000"
 bit_10 = "0000000000"
 x_col = 'red'
 y_col = 'green'
-pc_col = 'blue'
+pc_col = 'grey'
 ir_col = 'orange'
 ar_col = 'grey'
+dr_col = '#00FFE4'
+io_col = 'grey'
+back_col = '#082592'
 
 
 ROOT = Tk()
 ROOT.title("Project Simulation")
-ROOT.configure(background = 'black')
 f1 = Frame(ROOT)
-f1.grid(row = 0,column =0)
+f1.configure(background = back_col)
+f1.grid(row = 0,column =0,columnspan = 5)
 f2 = Frame(ROOT)
 f2.grid(row = 1, column =0)
-l1 = Label(f1, text="Assembly Code")
+l1 = Label(f1, text="Assembly Code",width = 35)
 l1.grid(row = 0 ,column =0)
 
 CodeArea = Text(f1,width = 30, height =20)
 CodeArea.grid(row = 1,column =0,rowspan = 8)
 
-l2 = Label(f1,text="Computer Registers")
+l2 = Label(f1,text="Computer Registers",width = 35)
 l2.grid(row = 0 ,column = 1,columnspan = 2)
 
 l3 = Label(f1,text = "Program Counter(PC):   ",background = pc_col)
@@ -55,29 +58,29 @@ l6.grid(row = 5,column = 1)
 YR = Label(f1,background = y_col,text = bit_16)
 YR.grid(row = 5,column =2)
 
-l7 = Label(f1,text = "Data Register(DR):          ")
+l7 = Label(f1,text = "Data Register(DR):          ",background = dr_col)
 l7.grid(row = 6,column = 1)
-DR = Label(f1,text = bit_16)
+DR = Label(f1,text = bit_16,background = dr_col)
 DR.grid(row = 6,column =2)
 
-l8 = Label(f1,text = "INPR: ")
+l8 = Label(f1,text = "INPR: ",background = io_col)
 l8.grid(row = 7,column = 1)
-INPR = Label(f1,text = bit_10)
+INPR = Label(f1,text = bit_10,background = io_col)
 INPR.grid(row = 7,column =2)
 
-l9 = Label(f1,text = "OUTR: ")
+l9 = Label(f1,text = "OUTR: ",background = io_col)
 l9.grid(row = 8,column = 1)
-OUTR = Label(f1,text =bit_10)
+OUTR = Label(f1,text =bit_10,background = io_col)
 OUTR.grid(row = 8,column =2)
 
 
 
-l10 = Label(f1,text="Memory")
+l10 = Label(f1,text="Memory",width = 35)
 l10.grid(row = 0,column = 3)
 RAM = Text(f1,width = 30, height =20)
 RAM.grid(row = 1,column =3,rowspan = 8)
 
-l12 = Label(f1,text = "Allocate Memory")
+l12 = Label(f1,text = "Allocate Memory",width = 35)
 l12.grid(row = 0, column = 4)
 MEMORY_CODE = Text(f1,width = 30,height = 20)
 MEMORY_CODE.grid(row = 1,column =4,rowspan = 8)
@@ -97,14 +100,14 @@ def LOAD(CodeArea):
     backend.architecture.prepare()
 
 #Connecting frontend with Backend
-b1 = Button(f2,text = "STEP",command = partial(backend.architecture.FetchDecodeExecute))
-b1.grid(row = 0,column =0)
-b3 = Button(f2,text = "RUN",command = partial(backend.architecture.RUN_PROGRAM))
-b3.grid(row = 1,column =0)
-b4 = Button(f2,text = "ALLOCATE",command = partial(backend.architecture.memory.ALLOCATE,MEMORY_CODE))
-b4.grid(row = 0,column =1)
-b2 = Button(f2,text = "Load Program",command = partial(LOAD,CodeArea))
-b2.grid(row = 1,column =2)
+b1 = Button(f1,text = "STEP",command = partial(backend.architecture.FetchDecodeExecute))
+b1.grid(row = 11,column =1,pady=10)
+b3 = Button(f1,text = "RUN",command = partial(backend.architecture.RUN_PROGRAM))
+b3.grid(row = 11,column =2)
+b4 = Button(f1,text = "ALLOCATE",command = partial(backend.architecture.memory.ALLOCATE,MEMORY_CODE))
+b4.grid(row = 11,column =4)
+b2 = Button(f1,text = "LOAD PROGRAM",command = partial(LOAD,CodeArea))
+b2.grid(row = 11,column =0)
 
 
 
