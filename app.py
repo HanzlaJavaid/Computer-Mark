@@ -73,19 +73,36 @@ l9.grid(row = 8,column = 1)
 OUTR = Label(f1,text =bit_10,background = io_col)
 OUTR.grid(row = 8,column =2)
 
-
-
 l10 = Label(f1,text="Memory",width = 35)
 l10.grid(row = 0,column = 3)
 RAM = Text(f1,width = 30, height =20)
 RAM.grid(row = 1,column =3,rowspan = 8)
 
+l13 = Label(f1,text="Stack",width = 35)
+l13.grid(row = 0,column = 4,columnspan =2)
+STACK = Text(f1,width = 30, height =10)
+STACK.grid(row = 1,column =4,rowspan = 4,columnspan = 2)
+
+l14 = Label(f1,text = "Stack Pointer(SP):     ",background = io_col)
+l14.grid(row = 6,column = 4)
+SP = Label(f1,text =bit_10,background = io_col)
+SP.grid(row = 6,column =5)
+
+l15 = Label(f1,text = "Stack size:                  ",background = io_col)
+l15.grid(row = 7,column = 4)
+SZ = Entry(f1,width = 10)
+SZ.grid(row = 7,column =5)
+
+b5 = Button(f1,text = "Assign")
+b5.grid(row = 8,column =5)
+
 l12 = Label(f1,text = "Allocate Memory",width = 35)
-l12.grid(row = 0, column = 4)
+l12.grid(row = 0, column = 6)
 MEMORY_CODE = Text(f1,width = 30,height = 20)
-MEMORY_CODE.grid(row = 1,column =4,rowspan = 8)
+MEMORY_CODE.grid(row = 1,column =6,rowspan = 8)
 
 backend.architecture.memory.output = RAM
+backend.architecture.memory.stackout = STACK
 backend.architecture.x.output = XR
 backend.architecture.y.output = YR
 backend.architecture.dr.output = DR
@@ -94,7 +111,7 @@ backend.architecture.outr.output = OUTR
 backend.architecture.ir.output = IR
 backend.architecture.ar.output = AR
 backend.architecture.pc.output = PC
-
+backend.architecture.sp.output = SP
 def LOAD(CodeArea):
     backend.architecture.memory.LOAD(CodeArea)
     backend.architecture.prepare()
@@ -105,7 +122,7 @@ b1.grid(row = 11,column =1,pady=10)
 b3 = Button(f1,text = "RUN",command = partial(backend.architecture.RUN_PROGRAM))
 b3.grid(row = 11,column =2)
 b4 = Button(f1,text = "ALLOCATE",command = partial(backend.architecture.memory.ALLOCATE,MEMORY_CODE))
-b4.grid(row = 11,column =4)
+b4.grid(row = 11,column =6)
 b2 = Button(f1,text = "LOAD PROGRAM",command = partial(LOAD,CodeArea))
 b2.grid(row = 11,column =0)
 

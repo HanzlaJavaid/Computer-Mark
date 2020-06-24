@@ -1,0 +1,12 @@
+X D LDA a
+Y D LDA b
+X D SHL a
+Y D SHL b
+Y D STA a
+X D ADD a
+
+
+
+X D LDA a
+X D PSH a
+Y D POP a

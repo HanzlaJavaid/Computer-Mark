@@ -8,7 +8,6 @@ def updateValue(i):
     for item in i:
         finalValue+=int(item)*(2**counter)
         counter+=1
-    print(finalValue)
     return finalValue
 
 def convert(axis,mode,opcode,address,indexer):
@@ -29,6 +28,9 @@ def convert(axis,mode,opcode,address,indexer):
         "SHL":"1101",
         "SHR":"1110",
         "COM":"1111",
+        "POP":"1000",
+        "PSH":"1100",
+
     }
     global identityCounter
     if address not in indexer.keys():
@@ -51,18 +53,25 @@ class Memory():
     def __init__(self):
         self.memorysize = 1024
         self.MEMORY = []
+        self.stacksize = 64
         self.REALMEMORY = []
         self.indexer = {}
         self.output= None
+        self.stackout = None
         for i in range(0,self.memorysize):
             WORD = "0000000000000000"
             self.MEMORY.append(WORD)
             self.REALMEMORY.append("")
     def Print(self):
-        if(self.output != None):
+        if(self.output != None and self.stackout!=None):
             self.output.delete('1.0', END)
-            for i in range(0,self.memorysize):
+            self.stackout.delete('1.0', END)
+            for i in range(0,self.memorysize-self.stacksize):
                 self.output.insert(END,self.MEMORY[i]+"\n")
+            for i in range(self.stacksize,self.memorysize):
+                self.stackout.insert(END,self.MEMORY[i]+"\n")
+
+
     def LOAD(self,r):
         #Preprocessing Raw string
         raw = r.get(1.0,END)
@@ -112,12 +121,13 @@ ar = Register(10,"NUM")
 ir = Register(10,"FULL")
 dr = Register(16,"NUM")
 tr = Register(16,"NUM")
+sp = Register(10,"NUM")
 inpr = Register(10,"NUM")
 outr = Register(10,"NUM")
 memory = Memory()
 
 class Architecture():
-    def __init__(self,acx,acy,pc,ar,ir,dr,tr,inpr,outr,memory):
+    def __init__(self,acx,acy,pc,ar,ir,dr,tr,sp,inpr,outr,memory):
         self.x = acx
         self.y = acy
         self.pc = pc
@@ -125,18 +135,25 @@ class Architecture():
         self.ar = ar
         self.dr = dr
         self.tr = tr
+        self.sp = sp
         self.inpr = inpr
         self.outr = outr
         self.memory = memory
-        self.pc.value = 0  
+        self.pc.value = 0
+        self.sp.value = self.memory.stacksize-1
     
     def prepare(self):
         self.pc.value = len(self.memory.indexer)-identityCounter
         x = '{0:b}'.format(int(self.pc.value))
+        j = '{0:b}'.format(int(self.sp.value))
         for i in range(0,10-len(x)):
             x = "0"+x
+        for i in range(0,10-len(j)):
+            j = "0"+j
+        self.sp.outputVal = j
         self.pc.outputVal = x
         self.pc.update()
+        self.sp.update()
     
     def ModifyOutput(self,val,outputsource):
         if outputsource.t == "FULL":
@@ -198,6 +215,10 @@ class Architecture():
             return "SHL_INSTRUCTION"
         if(val.find("SHR") != -1):
             return "SHR_INSTRUCTION"
+        if(val.find("PSH") != -1):
+            return "PSH_INSTRUCTION"
+        if(val.find("POP") != -1):
+            return "POP_INSTRUCTION"
         if(val.find('HLT') != -1):
             return "HALT"
         
@@ -237,6 +258,10 @@ class Architecture():
             self.SHL(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
         if(routine == "SHR_INSTRUCTION"):
             self.SHR(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
+        if(routine == "PSH_INSTRUCTION"):
+            self.PUSH(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
+        if(routine == "POP_INSTRUCTION"):
+            self.POP(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
         if(routine == "HALT"):
             return 0
         return 1
@@ -333,9 +358,38 @@ class Architecture():
         if(axis == "Y"):
             self.RIGHTSHIFT_YR(mode)
 
+    def PUSH(self,axis,mode,address):
+        self.INCREMENT_SP()
+        self.SP_TO_AR()
+        if(axis == "X"):
+            self.XR_TO_Mar()
+        if(axis == "Y"):
+            self.YR_TO_Mar()
+        
 
+    def POP(self,axis,mode,address):
+        self.SP_TO_AR()
+        self.Mar_TO_DR()
+        if(axis == "X"):
+            self.DR_TO_XR()
+        if(axis == "Y"):
+            self.DR_TO_YR()
+        self.DECREMENT_SP()
 
     #Microoperations
+
+    def SP_TO_AR(self):
+        self.ar.value = self.sp.value
+        self.ModifyOutput(self.ar.value,self.ar)
+
+    def INCREMENT_SP(self):
+        self.sp.value = self.sp.value + 1
+        self.ModifyOutput(self.sp.value,self.sp)
+
+    def DECREMENT_SP(self):
+        self.sp.value = self.sp.value - 1  
+        self.ModifyOutput(self.sp.value,self.sp)
+
     def INCREMENT_PC(self):
         self.pc.value = self.pc.value + 1
         self.ModifyOutput(self.pc.value,self.pc)
@@ -439,9 +493,9 @@ class Architecture():
             bit = "0"
         if(bit == "I"):
             bit = "1"
-        temp = self.x.outputVal+bit
-        temp = self.x.outputVal[1:]
-        self.x.value = updateValue(temp)
+        self.x.outputVal = self.x.outputVal+bit
+        self.x.outputVal = self.x.outputVal[1:]
+        self.x.value = updateValue(self.x.outputVal)
         self.ModifyOutput(self.x.value,self.x)
     
     def RIGHTSHIFT_XR(self,bit):
@@ -449,9 +503,9 @@ class Architecture():
             bit = "0"
         if(bit == "I"):
             bit = "1"
-        temp = bit+self.x.outputVal
-        temp = self.x.outputVal[:-1]
-        self.x.value = updateValue(temp)
+        self.x.outputVal = bit+self.x.outputVal
+        self.x.outputVal = self.x.outputVal[:-1]
+        self.x.value = updateValue(self.x.outputVal)
         self.ModifyOutput(self.x.value,self.x)
     
     def LEFTSHIFT_YR(self,bit):
@@ -459,9 +513,9 @@ class Architecture():
             bit = "0"
         if(bit == "I"):
             bit = "1"
-        temp = self.y.outputVal+bit
-        temp = self.y.outputVal[1:]
-        self.y.value = updateValue(temp)
+        self.y.outputVal = self.y.outputVal+bit
+        self.y.outputVal = self.y.outputVal[1:]
+        self.y.value = updateValue(self.y.outputVal)
         self.ModifyOutput(self.y.value,self.y)
     
     def RIGHTSHIFT_YR(self,bit):
@@ -469,10 +523,10 @@ class Architecture():
             bit = "0"
         if(bit == "I"):
             bit = "1"
-        temp = bit+self.y.outputVal
-        temp = self.y.outputVal[:-1]
-        self.y.value = updateValue(temp)
+        self.y.outputVal = self.y.outputVal+bit
+        self.y.outputVal = self.y.outputVal[:-1]
+        self.y.value = updateValue(self.y.outputVal)
         self.ModifyOutput(self.y.value,self.y)
 
 
-architecture = Architecture(acx,acy,pc,ar,ir,dr,tr,inpr,outr,memory)
+architecture = Architecture(acx,acy,pc,ar,ir,dr,tr,sp,inpr,outr,memory)
