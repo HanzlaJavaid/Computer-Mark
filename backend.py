@@ -1,20 +1,34 @@
 from tkinter import *
 import os
 identityCounter =0 
+def updateValue(i):
+    i = i[::-1]
+    finalValue = 0
+    counter = 0
+    for item in i:
+        finalValue+=int(item)*(2**counter)
+        counter+=1
+    print(finalValue)
+    return finalValue
+
 def convert(axis,mode,opcode,address,indexer):
     switcher = {
         "X":"0",
         "Y":"1",
         "D":"0",
         "I":"1",
-        "LDA":"0000",
         "ADD":"0001",
-        "AND":"0010",
-        "SUB":"0011",
-        "STO":"0100",
-        "COM":"0101",
-        "CMP":"0110",
-        "JMP":"0111",
+        "SUB":"0010",
+        "AND":"0011",
+        "LDA":"0101",
+        "STO":"0110",
+        "CMP":"0111",
+        "JMP":"1001",
+        "BSA":"1010",
+        "ISZ":"1011",
+        "SHL":"1101",
+        "SHR":"1110",
+        "COM":"1111",
     }
     global identityCounter
     if address not in indexer.keys():
@@ -23,7 +37,7 @@ def convert(axis,mode,opcode,address,indexer):
     
     a = indexer[address]
     x = '{0:b}'.format(int(a))
-    for i in range(0,11-len(x)):
+    for i in range(0,10-len(x)):
         x = "0"+x
 
     return(switcher[axis]+switcher[mode]+switcher[opcode]+x) 
@@ -114,7 +128,7 @@ class Architecture():
         self.inpr = inpr
         self.outr = outr
         self.memory = memory
-        self.pc.value = 0;  
+        self.pc.value = 0  
     
     def prepare(self):
         self.pc.value = len(self.memory.indexer)-identityCounter
@@ -154,6 +168,7 @@ class Architecture():
     
     #Operations
     def DECODE(self,val): 
+        print(val)
         value = self.memory.indexer[val[5:]]
         self.ar.value = int(value)
         if(val[1] == "I"):
@@ -179,9 +194,13 @@ class Architecture():
             return "ISZ_INSTRUCTION"
         if(val.find('COM') != -1):
             return "COM_INSTRUCTION"       
+        if(val.find("SHL") != -1):
+            return "SHL_INSTRUCTION"
+        if(val.find("SHR") != -1):
+            return "SHR_INSTRUCTION"
         if(val.find('HLT') != -1):
             return "HALT"
-
+        
     def RUN_PROGRAM(self):
         s = 1
         while(s == 1):
@@ -213,7 +232,11 @@ class Architecture():
         if(routine == "ISZ_INSTRUCTION"):
             self.ISZ(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
         if(routine == "COM_INSTRUCTION"):
-            self.COMPLEMENT(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
+            self.COM(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
+        if(routine == "SHL_INSTRUCTION"):
+            self.SHL(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
+        if(routine == "SHR_INSTRUCTION"):
+            self.SHR(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
         if(routine == "HALT"):
             return 0
         return 1
@@ -290,7 +313,7 @@ class Architecture():
         if(int(self.dr.value) == 0):
             self.INCREMENT_PC()
 
-    def COMPLEMENT(self,axis,mode,address):
+    def COM(self,axis,mode,address):
         if(axis == "X"):
             self.COM_X()
             self.XR_TO_Mar()
@@ -298,6 +321,20 @@ class Architecture():
             self.COM_Y()
             self.YR_TO_Mar()
     
+    def SHL(self,axis,mode,address):
+        if(axis == "X"):
+            self.LEFTSHIFT_XR(mode)
+        if(axis == "Y"):
+            self.LEFTSHIFT_YR(mode)
+    
+    def SHR(self,axis,mode,address):
+        if(axis == "X"):
+            self.RIGHTSHIFT_XR(mode)
+        if(axis == "Y"):
+            self.RIGHTSHIFT_YR(mode)
+
+
+
     #Microoperations
     def INCREMENT_PC(self):
         self.pc.value = self.pc.value + 1
@@ -396,7 +433,46 @@ class Architecture():
     def DR_TO_Mar(self):
         self.memory.REALMEMORY[self.ar.value] = self.dr.value
         self.ModifyMemory(self.dr)
-        
+
+    def LEFTSHIFT_XR(self,bit):
+        if(bit == "D"):
+            bit = "0"
+        if(bit == "I"):
+            bit = "1"
+        temp = self.x.outputVal+bit
+        temp = self.x.outputVal[1:]
+        self.x.value = updateValue(temp)
+        self.ModifyOutput(self.x.value,self.x)
+    
+    def RIGHTSHIFT_XR(self,bit):
+        if(bit == "D"):
+            bit = "0"
+        if(bit == "I"):
+            bit = "1"
+        temp = bit+self.x.outputVal
+        temp = self.x.outputVal[:-1]
+        self.x.value = updateValue(temp)
+        self.ModifyOutput(self.x.value,self.x)
+    
+    def LEFTSHIFT_YR(self,bit):
+        if(bit == "D"):
+            bit = "0"
+        if(bit == "I"):
+            bit = "1"
+        temp = self.y.outputVal+bit
+        temp = self.y.outputVal[1:]
+        self.y.value = updateValue(temp)
+        self.ModifyOutput(self.y.value,self.y)
+    
+    def RIGHTSHIFT_YR(self,bit):
+        if(bit == "D"):
+            bit = "0"
+        if(bit == "I"):
+            bit = "1"
+        temp = bit+self.y.outputVal
+        temp = self.y.outputVal[:-1]
+        self.y.value = updateValue(temp)
+        self.ModifyOutput(self.y.value,self.y)
 
 
 architecture = Architecture(acx,acy,pc,ar,ir,dr,tr,inpr,outr,memory)
