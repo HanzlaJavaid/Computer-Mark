@@ -16,7 +16,7 @@ back_col = '#082592'
 
 
 ROOT = Tk()
-ROOT.title("Project Simulation")
+ROOT.title("Computer Mark Simulation")
 f1 = Frame(ROOT)
 f1.configure(background = back_col)
 f1.grid(row = 0,column =0,columnspan = 5)
@@ -93,14 +93,19 @@ l15.grid(row = 7,column = 4)
 SZ = Entry(f1,width = 10)
 SZ.grid(row = 7,column =5)
 
-b5 = Button(f1,text = "Assign")
-b5.grid(row = 8,column =5)
+
 
 l12 = Label(f1,text = "Allocate Memory",width = 35)
 l12.grid(row = 0, column = 6)
 MEMORY_CODE = Text(f1,width = 30,height = 20)
 MEMORY_CODE.grid(row = 1,column =6,rowspan = 8)
 
+
+def LOAD(CodeArea):
+    backend.architecture.memory.LOAD(CodeArea)
+    backend.architecture.prepare()
+
+backend.architecture.memory.SetMemory()
 backend.architecture.memory.output = RAM
 backend.architecture.memory.stackout = STACK
 backend.architecture.x.output = XR
@@ -112,9 +117,12 @@ backend.architecture.ir.output = IR
 backend.architecture.ar.output = AR
 backend.architecture.pc.output = PC
 backend.architecture.sp.output = SP
-def LOAD(CodeArea):
-    backend.architecture.memory.LOAD(CodeArea)
-    backend.architecture.prepare()
+MEMORY_CODE.delete('1.0',END)
+CodeArea.delete('1.0',END)
+STACK.delete('1.0', END)
+RAM.delete('1.0', END)
+
+
 
 #Connecting frontend with Backend
 b1 = Button(f1,text = "STEP",command = partial(backend.architecture.FetchDecodeExecute))
@@ -125,7 +133,8 @@ b4 = Button(f1,text = "ALLOCATE",command = partial(backend.architecture.memory.A
 b4.grid(row = 11,column =6)
 b2 = Button(f1,text = "LOAD PROGRAM",command = partial(LOAD,CodeArea))
 b2.grid(row = 11,column =0)
-
+b5 = Button(f1,text = "Assign",command = partial(backend.architecture.setStackSize,SZ))
+b5.grid(row = 8,column =5)
 
 
 ROOT.mainloop()

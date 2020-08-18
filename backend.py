@@ -1,6 +1,7 @@
 from tkinter import *
 import os
 identityCounter =0 
+t = 0
 def updateValue(i):
     i = i[::-1]
     finalValue = 0
@@ -28,21 +29,54 @@ def convert(axis,mode,opcode,address,indexer):
         "SHL":"1101",
         "SHR":"1110",
         "COM":"1111",
-        "POP":"1000",
-        "PSH":"1100",
+        "PSH":"000",
+        "POP":"100",
+        "INP":'101',
+        "OUT":'001',
+        "ION":'110',
+        "IOF":'010',
+        "CLA":'111',
+        "HLT":"011",
+        "HLT ":"011",
+        
 
     }
     global identityCounter
+
+    adjust = 10
+    
+    if (axis != 'X' and axis != 'Y'):
+        adjust = 12
+        address = 0
+    if (axis == 'X' or axis == 'Y'):
+        adjust = 10       
+
+    if (mode in io or mode in stkop):
+        adjust = 12
+        address = 0
+    
+    if address == "#":
+        address = 0
+
     if address not in indexer.keys():
         indexer.update({address:int(address)})
         identityCounter+=1
-    
+
     a = indexer[address]
     x = '{0:b}'.format(int(a))
-    for i in range(0,10-len(x)):
+    for i in range(0,adjust-len(x)):
         x = "0"+x
+    if (mode in io or mode in stkop):
+        return(switcher[axis]+switcher[mode]+x)
+    if (axis == 'X' or axis == 'Y'):
+        return(switcher[axis]+switcher[mode]+switcher[opcode]+x) 
+    if (axis != 'X' or axis != 'Y'):
+        return("0"+switcher[axis+mode+opcode]+x)
 
-    return(switcher[axis]+switcher[mode]+switcher[opcode]+x) 
+stkop = ["PSH","POP","CLA"]
+pref = ["HLT"]
+io = ["INP","OUT"]
+io2 = ["ION","IOF"]
 
 def change_content(r,content):
     r['text'] = content
@@ -58,18 +92,28 @@ class Memory():
         self.indexer = {}
         self.output= None
         self.stackout = None
-        for i in range(0,self.memorysize):
-            WORD = "0000000000000000"
-            self.MEMORY.append(WORD)
-            self.REALMEMORY.append("")
+        self.SetMemory()
+    
     def Print(self):
         if(self.output != None and self.stackout!=None):
             self.output.delete('1.0', END)
             self.stackout.delete('1.0', END)
             for i in range(0,self.memorysize-self.stacksize):
                 self.output.insert(END,self.MEMORY[i]+"\n")
-            for i in range(self.stacksize,self.memorysize):
-                self.stackout.insert(END,self.MEMORY[i]+"\n")
+            for j in range(self.memorysize-self.stacksize,self.memorysize):
+                self.stackout.insert(END,self.MEMORY[j]+"\n")
+
+    def SetMemory(self):
+        self.MEMORY = []
+        self.stacksize = 64
+        self.REALMEMORY = []
+        self.indexer = {}
+        self.output= None
+        self.stackout = None
+        for i in range(0,self.memorysize):
+            WORD = "0000000000000000"
+            self.MEMORY.append(WORD)
+            self.REALMEMORY.append("")
 
 
     def LOAD(self,r):
@@ -79,7 +123,13 @@ class Memory():
         startIndex = len(self.indexer)
         insI = 0
         for i in range(startIndex,startIndex+len(temp)-1):
-            x = temp[insI].split(' ')
+            if(temp[insI] not in pref):
+                x = temp[insI].split(' ')
+            if(temp[insI][2:] in stkop or temp[insI][2:] in io):
+                x = temp[insI].split(' ')
+                x = x + ["#","#"]
+            if (temp[insI] in pref or temp[insI] in io2):
+                x = temp[insI]+" "
             code = convert(x[0],x[1],x[2],x[3],self.indexer)
             real = x[0]+x[1]+x[2]+x[3]
             self.REALMEMORY[i] = real
@@ -140,8 +190,15 @@ class Architecture():
         self.outr = outr
         self.memory = memory
         self.pc.value = 0
-        self.sp.value = self.memory.stacksize-1
+        self.sp.value = self.memory.memorysize-self.memory.stacksize -1
     
+    def setStackSize(self,source):
+        size = int(source.get())
+        self.memory.stacksize = size
+        self.sp.value = self.memory.memorysize-self.memory.stacksize -1
+        self.memory.Print()
+
+
     def prepare(self):
         self.pc.value = len(self.memory.indexer)-identityCounter
         x = '{0:b}'.format(int(self.pc.value))
@@ -154,14 +211,21 @@ class Architecture():
         self.pc.outputVal = x
         self.pc.update()
         self.sp.update()
-    
     def ModifyOutput(self,val,outputsource):
         if outputsource.t == "FULL":
             if isinstance(val,str):
-                a = val[0]
-                b = val[1]
-                c = val[2:5]
-                d = val[5:]
+                if(val.find("#") == -1):
+                    a = val[0]
+                    b = val[1]
+                    c = val[2:5]
+                    d = val[5:]
+                    t = 0
+                if(val.find("#") != -1):
+                    a = val[0]
+                    b = val[1:val.find("#")]
+                    c = "#"
+                    d = "#"
+                    t = 1
                 outputsource.outputVal = convert(a,b,c,d,self.memory.indexer)
             if isinstance(val,int):
                 val = '{0:b}'.format(int(val))
@@ -186,11 +250,14 @@ class Architecture():
     #Operations
     def DECODE(self,val): 
         print(val)
-        value = self.memory.indexer[val[5:]]
-        self.ar.value = int(value)
+        print(t)
+        if("#" not in val and "HLT" not in val):
+            value = self.memory.indexer[val[5:]]
+            self.ar.value = int(value)
         if(val[1] == "I"):
             self.Mar_TO_AR()        
             print(self.ar.value)
+        print(val)
         if(val.find('LDA') != -1):
             return "LOAD_INSTRUCTION"
         if(val.find('ADD') != -1):
@@ -219,6 +286,16 @@ class Architecture():
             return "PSH_INSTRUCTION"
         if(val.find("POP") != -1):
             return "POP_INSTRUCTION"
+        if(val.find("INP") != -1):
+            return "INP_INSTRUCTION"
+        if(val.find("OUT") != -1):
+            return "OUT_INSTRUCTION"
+        if(val.find("ION") != -1):
+            return "ION_INSTRUCTION"
+        if(val.find("IOF") != -1):
+            return "IOF_INSTRUCTION"
+        if(val.find("CLA") != -1):
+            return "CLA_INSTRUCTION"
         if(val.find('HLT') != -1):
             return "HALT"
         
@@ -258,14 +335,20 @@ class Architecture():
             self.SHL(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
         if(routine == "SHR_INSTRUCTION"):
             self.SHR(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
+        if(routine == "CLA_INSTRUCTION"):
+            self.CLA(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
         if(routine == "PSH_INSTRUCTION"):
             self.PUSH(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
         if(routine == "POP_INSTRUCTION"):
+            self.POP(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
+        if(routine == "INP_INSTRUCTION"):
             self.POP(self.ir.value[0],self.ir.value[1],self.ir.value[5:])
         if(routine == "HALT"):
             return 0
         return 1
 
+
+    
     def LOAD(self,axis,mode,address):
         self.Mar_TO_DR()
         if(axis == 'X'):
@@ -366,7 +449,6 @@ class Architecture():
         if(axis == "Y"):
             self.YR_TO_Mar()
         
-
     def POP(self,axis,mode,address):
         self.SP_TO_AR()
         self.Mar_TO_DR()
@@ -375,6 +457,24 @@ class Architecture():
         if(axis == "Y"):
             self.DR_TO_YR()
         self.DECREMENT_SP()
+    
+    def INP(self,axis,mode,address):
+        if(axis == "X"):
+            self.INPR_TO_XR()
+        if(axis == "Y"):
+            self.INPR_TO_YR()
+    
+    def OUT(self,axis,mode,address):
+        if(axis == "X"):
+            self.XR_TO_OUTR()
+        if(axis == "Y"):
+            self.YR_TO_OUTR()
+    
+    def CLA(self,axis,mode,address):
+        if(axis == "X"):
+            self.XR_CLEAR()
+        if(axis == "Y"):
+            self.YR_CLEAR()
 
     #Microoperations
 
@@ -487,6 +587,26 @@ class Architecture():
     def DR_TO_Mar(self):
         self.memory.REALMEMORY[self.ar.value] = self.dr.value
         self.ModifyMemory(self.dr)
+    def INPR_TO_XR(self):
+        self.x.value = self.inpr.value
+        self.ModifyOutput(self.x.value,self.x)
+    def INPR_TO_YR(self):
+        self.y.value = self.inpr.value
+        self.ModifyOutput(self.y.value,self.y)
+    def XR_TO_OUTR(self):
+        self.outr.value = self.x.value
+        self.ModifyOutput(self.outr.value,self.outr)
+    def YR_TO_OUTR(self):
+        self.outr.value = self.y.value
+        self.ModifyOutput(self.outr.value,self.outr)
+    def XR_CLEAR(self):
+        self.x.value = 0
+        self.ModifyOutput(self.x.value,self.x)
+    def YR_CLEAR(self):
+        self.y.value = 0
+        self.ModifyOutput(self.y.value,self.y)
+    
+
 
     def LEFTSHIFT_XR(self,bit):
         if(bit == "D"):

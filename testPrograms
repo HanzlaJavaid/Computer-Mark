@@ -10,3 +10,117 @@ X D ADD a
 X D LDA a
 X D PSH a
 Y D POP a
+
+
+Y D LDA a
+Y D PSH a
+X D LDA b
+X D PSH b
+Y D POP b
+Y D STO c
+
+
+
+
+
+
+
+
+
+
+
+
+module FourBitAdder(
+    Sum ,Cout , Cin , X ,Y
+    );
+output [3:0]Sum;
+output  Cout;
+input  Cin;
+input  [3:0]X,Y;
+wire C1,C2,C3;
+
+Fulladder FA1(X[0],Y[0],Cin,Sum[0],C1);
+Fulladder FA2(X[1],Y[1],C1,Sum[1],C2);
+Fulladder FA3(.A(X[2]),.B(Y[2]),.Cin(C2),.S(Sum[2]),.Co0ut(C3));
+Fulladder FA4(.A(X[3]),.B(Y[3]),.Cin(C3),.S(Sum[3]),.Cout(Cout),);
+
+endmodule
+
+
+
+
+module FourBitAdder(
+    Sum ,Cout , Cin , X ,Y
+    );
+output [3:0]Sum;
+output  Cout;
+input  Cin;
+input  [3:0]X,Y;
+wire C1,C2,C3;
+
+FullAdder FA1(X[0],Y[0],Cin,Sum[0],C1);
+FullAdder FA2(X[1],Y[1],C1,Sum[1],C2);
+FullAdder FA3(X[2],Y[2],C2,Sum[2],C3);
+FullAdder FA4(X[3],Y[3],C3,Sum[3],Cout);
+
+endmodule
+
+
+
+
+
+
+module fulladder(
+	input a,
+	input b,
+	input cin,
+	output sum,
+	output cout)
+
+assign sum = a^b^cin;
+assign cout = (a&b)|cin&(a^b);
+	
+endmodule 
+
+
+module fulladder(
+	input a,
+	input b,
+	input cin,
+	output sum,
+	output cout)
+
+assign sum = a^b^cin;
+assign cout = (a&b)|cin&(a^b);
+	
+endmodule 
+
+
+Cin = 0;
+		X[0] = 0;
+		Y[0] = 1;
+		X[1] = 1;
+		Y[1] = 1;
+		X[2] = 1;
+		Y[2] = 0;
+		X[3] = 0;
+		Y[3] = 1;
+		#100;  
+		// Add stimulus here
+		Cin = 0;
+		X[0] = 0;
+		Y[0] = 0;
+		X[1] = 1;
+		Y[1] = 1;
+		X[2] = 1;
+		Y[2] = 0;
+		X[3] = 1;
+		Y[3] = 1;
+
+
+
+X D LDA a
+Y D LDA b
+X PSH
+Y POP
+HLT
